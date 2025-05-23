@@ -71,46 +71,42 @@ class MainViewProvider implements vscode.WebviewViewProvider {
 	}
 
 	private _getHtmlForWebview(webview: vscode.Webview) {
-		// Get the local path to main script run in the webview, then convert it to a uri we can use in the webview.
 		const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'main.js'));
 
-		// Do the same for the stylesheet.
-		const styleResetUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'reset.css'));
-		const styleVSCodeUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'vscode.css'));
 		const styleMainUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'main.css'));
 
-		// Use a nonce to only allow a specific script to be run.
+		const imageUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'mame.png'));
+
 		const nonce = getNonce();
 
 		return `<!DOCTYPE html>
-			<html lang="en">
-			<head>
-				<meta charset="UTF-8">
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; style-src ${webview.cspSource}; img-src ${webview.cspSource} https:; script-src 'nonce-${nonce}';">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-				<!--
-					Use a content security policy to only allow loading styles from our extension directory,
-					and only allow scripts that have a specific nonce.
-					(See the 'webview-sample' extension sample for img-src content security policy examples)
-				-->
-				<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; script-src 'nonce-${nonce}';">
+      <link href="${styleMainUri}" rel="stylesheet">
+      <title>mame click</title>
+    </head>
+    <body>
+      <div id="game-container">
+        <img id="mame-image" src="${imageUri}" alt="mame" />
+        <div id="points-display">豆: 0</div>
+        <button id="upgrade-button">アップグレード</button>
+        <canvas id="bean-canvas" width="300" height="200"></canvas>
+      </div>
 
-				<meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <!-- 🔽 画像URLを JS に渡す：main.js より前に定義 -->
+      <script nonce="${nonce}">
+        const mameImageSrc = "${imageUri}";
+      </script>
 
-				<link href="${styleResetUri}" rel="stylesheet">
-				<link href="${styleVSCodeUri}" rel="stylesheet">
-				<link href="${styleMainUri}" rel="stylesheet">
-
-				<title>Cat Colors</title>
-			</head>
-			<body>
-				<ul class="color-list">
-				</ul>
-
-				<button class="add-color-button">Add Color</button>
-
-				<script nonce="${nonce}" src="${scriptUri}"></script>
-			</body>
-			</html>`;
+      <!-- 🔽 必ず mameImageSrc 定義のあとに main.js を読み込む -->
+      <script nonce="${nonce}" src="${scriptUri}"></script>
+    </body>
+    </html>`;
 	}
 }
 

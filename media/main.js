@@ -1,100 +1,101 @@
-//@ts-check
+let points = 0;
+let autoClickPower = 1;
 
-// This script will be run within the webview itself
-// It cannot access the main VS Code APIs directly.
-(function () {
-    const vscode = acquireVsCodeApi();
+const mameImage = document.getElementById('mame-image');
+const upgradeButton = document.getElementById('upgrade-button');
+const pointsDisplay = document.getElementById('points-display');
 
-    const oldState = vscode.getState() || { colors: [] };
+// 画像クリックでポイント加算
+mameImage.addEventListener('click', () => {
+  points++;
+  updateDisplay();
 
-    /** @type {Array<{ value: string }>} */
-    let colors = oldState.colors;
+  // アニメーション効果
+  mameImage.classList.add('clicked');
+  setTimeout(() => {
+    mameImage.classList.remove('clicked');
+  }, 100);
+});
 
-    updateColorList(colors);
+upgradeButton.addEventListener('click', () => {
+  if (points >= 100) {
+    points -= 100;
+    autoClickPower += 1;
+    updateDisplay();
+    alert(`オート加算量が +1 されました！ 現在: ${autoClickPower}/秒`);
+  } else {
+    alert('アップグレードには100豆が必要です');
+  }
+});
 
-    document.querySelector('.add-color-button').addEventListener('click', () => {
-        addColor();
-    });
+function updateDisplay() {
+  pointsDisplay.textContent = `豆: ${points}`;
+}
 
-    // Handle messages sent from the extension to the webview
-    window.addEventListener('message', event => {
-        const message = event.data; // The json data that the extension sent
-        switch (message.type) {
-            case 'addColor':
-                {
-                    addColor();
-                    break;
-                }
-            case 'clearColors':
-                {
-                    colors = [];
-                    updateColorList(colors);
-                    break;
-                }
+// 自動加算
+setInterval(() => {
+  points += autoClickPower;
+  updateDisplay();
+}, 1000);
 
-        }
-    });
+// アニメーション
+//
+//
 
-    /**
-     * @param {Array<{ value: string }>} colors
-     */
-    function updateColorList(colors) {
-        const ul = document.querySelector('.color-list');
-        ul.textContent = '';
-        for (const color of colors) {
-            const li = document.createElement('li');
-            li.className = 'color-entry';
+const canvas = document.getElementById('bean-canvas');
+const ctx = canvas.getContext('2d');
+const beans = [];
+const MAX_BEANS = 100;
 
-            const colorPreview = document.createElement('div');
-            colorPreview.className = 'color-preview';
-            colorPreview.style.backgroundColor = `#${color.value}`;
-            colorPreview.addEventListener('click', () => {
-                onColorClicked(color.value);
-            });
-            li.appendChild(colorPreview);
+// const mameImage = document.getElementById('mame-image');
+// const upgradeButton = document.getElementById('upgrade-button');
+// const pointsDisplay = document.getElementById('points-display');
 
-            const input = document.createElement('input');
-            input.className = 'color-input';
-            input.type = 'text';
-            input.value = color.value;
-            input.addEventListener('change', (e) => {
-                const value = e.target.value;
-                if (!value) {
-                    // Treat empty value as delete
-                    colors.splice(colors.indexOf(color), 1);
-                } else {
-                    color.value = value;
-                }
-                updateColorList(colors);
-            });
-            li.appendChild(input);
+// 豆画像（Canvas用）
+const beanImage = new Image();
+beanImage.src = mameImageSrc;
 
-            ul.appendChild(li);
-        }
+mameImage.addEventListener('click', () => {
+  points++;
+  updateDisplay();
+  mameImage.classList.add('clicked');
+  setTimeout(() => mameImage.classList.remove('clicked'), 100);
+  addAnimatedBean();
+});
 
-        // Update the saved state
-        vscode.setState({ colors: colors });
-    }
+function addAnimatedBean() {
+  if (beans.length >= MAX_BEANS) beans.shift();
+  beans.push({
+    x: Math.random() * canvas.width,
+    y: canvas.height,
+    vy: -2 - Math.random() * 2,
+    alpha: 1.0
+  });
+}
 
-    /** 
-     * @param {string} color 
-     */
-    function onColorClicked(color) {
-        vscode.postMessage({ type: 'colorSelected', value: color });
-    }
+function animateBeans() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    /**
-     * @returns string
-     */
-    function getNewCalicoColor() {
-        const colors = ['020202', 'f1eeee', 'a85b20', 'daab70', 'efcb99'];
-        return colors[Math.floor(Math.random() * colors.length)];
-    }
+  beans.forEach(bean => {
+    bean.y += bean.vy;
+    bean.alpha -= 0.01;
+  });
 
-    function addColor() {
-        colors.push({ value: getNewCalicoColor() });
-        updateColorList(colors);
-    }
-}());
+  for (let i = beans.length - 1; i >= 0; i--) {
+    if (beans[i].alpha <= 0) beans.splice(i, 1);
+  }
 
+  beans.forEach(bean => {
+    ctx.globalAlpha = bean.alpha;
+    ctx.drawImage(beanImage, bean.x - 8, bean.y - 8, 16, 16);
+  });
+  ctx.globalAlpha = 1.0;
 
+  requestAnimationFrame(animateBeans);
+}
+
+function updateDisplay() {
+  pointsDisplay.textContent = `豆: ${points}`;
+}
+
+animateBeans();

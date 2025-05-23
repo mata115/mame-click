@@ -1,6 +1,6 @@
 {
 	"name": "mame-click",
-	"description": "Calico Colors - A Webview View API Sample",
+	"description": "",
 	"version": "0.0.1",
 	"publisher": "vscode-samples",
 	"private": true,
@@ -27,19 +27,19 @@
 				{
 					"type": "webview",
 					"id": "mameClick.mainView",
-					"name": "Calico Colors"
+					"name": "Mame Click"
 				}
 			]
 		},
 		"commands": [
 			{
 				"command": "mameClick.addColor",
-				"category": "Calico Colors",
+				"category": "Mame Click",
 				"title": "Add Color"
 			},
 			{
 				"command": "mameClick.clearColors",
-				"category": "Calico Colors",
+				"category": "Mame Click",
 				"title": "Clear Colors",
 				"icon": "$(clear-all)"
 			}
